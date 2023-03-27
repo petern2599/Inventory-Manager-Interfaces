@@ -121,8 +121,8 @@ class Label():
         minute = datetime.datetime.now().strftime("%M")
         second = datetime.datetime.now().strftime("%S")
 
-        checkin_datetime = month + " " + day + ", " + year + " " + hour + ":" + minute + ":" + second
-        self.generate_wrapped_text(checkin_name_x,checkin_name_y+20,checkin_datetime,0.5,15)
+        self.checkin_datetime = month + " " + day + ", " + year + " " + hour + ":" + minute + ":" + second
+        self.generate_wrapped_text(checkin_name_x,checkin_name_y+20,self.checkin_datetime,0.5,15)
 
     def generate_checkout_text(self,checkout_datetime):
         checkout_name_x = 30

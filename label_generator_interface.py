@@ -1,5 +1,6 @@
 from label_generator import Label
-
+from db_login_interface import DBLoginUI
+from inventory_db_connector import InventoryDBConnector
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -22,6 +23,8 @@ class LabelGeneratorUI(QMainWindow):
         self.generate_button.clicked.connect(lambda: self.on_generate_clicked())
         self.menu_button.clicked.connect(lambda: self.on_menu_clicked())
         self.exit_button.clicked.connect(lambda:self.on_exit_clicked())
+        self.db_button.clicked.connect(lambda:self.on_db_clicked())
+        self.test_button.clicked.connect(lambda:self.on_test_clicked())
 
     def set_ui_components(self):
         menu_icon_path = "Resources//menu icon.png"
@@ -60,6 +63,19 @@ class LabelGeneratorUI(QMainWindow):
         if missing_value_check == True:
             self.show_label_preview(label)
 
+            year = datetime.datetime.now().strftime("%Y")
+            month = datetime.datetime.now().strftime("%m")
+            day = datetime.datetime.now().strftime("%d")
+            hour = datetime.datetime.now().strftime("%H")
+            minute = datetime.datetime.now().strftime("%M")
+            second = datetime.datetime.now().strftime("%S")
+            checkin = year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second
+
+            query = "INSERT INTO inventory" + \
+                    "(product_no,product_name,brand,weight,quantity,aisle,checkin)" + \
+                    "VALUES ('{}','{}','{}',{},{},'{}',TO_TIMESTAMP('{}','YYYY-MM-DD HH24:MI:SS'))".format(product_number,item_name,brand_name,weight,quantity,aisle_text,checkin)
+            self.conn.insert_db(query)
+
     def on_menu_clicked(self):
         self.exit_button.show()
         self.menu_anim = QPropertyAnimation(self.menu_background, b"geometry")
@@ -92,6 +108,22 @@ class LabelGeneratorUI(QMainWindow):
         self.exit_anim.finished.connect(on_exit_clicked_part2)
         self.menu_button.show()
         self.exit_button.hide()
+
+    def on_db_clicked(self):
+        self.login_window = DBLoginUI()
+        self.login_window.setWindowTitle('Database Login')
+        self.login_window.main_app = self
+        self.login_window.show()
+
+    def login_to_database(self,user,password,host,port,db):
+        self.conn = InventoryDBConnector()
+        try:
+            self.conn.connect_to_db(db,host,user,password,port)
+            print("Database connection established!")
+            self.login_window.hide()
+        except Exception as e:
+            print("Could not connect to database!")
+            print(e)
 
     def get_item_name(self):
         return self.item_name_edit.text()

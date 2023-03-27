@@ -1,5 +1,3 @@
-from inventory_db_connector import InventoryDBConnector
-
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -13,6 +11,8 @@ class DBLoginUI(QMainWindow):
         uic.loadUi("UI Layouts//db_login.ui",self)
         #Show applicaiton
         self.show()
+        self.main_app = None
+        self.login_button.clicked.connect(lambda:self.on_login_clicked())
     
     def set_ui_components(self):
         path = "Resources//package-icon.png"
@@ -22,6 +22,14 @@ class DBLoginUI(QMainWindow):
         scene = QGraphicsScene(self)
         scene.addItem(item)                                                                                                                                                  
         self.logo_view.setScene(scene)
+
+    def on_login_clicked(self):
+        user = self.user_edit.text()
+        password = self.password_edit.text()
+        host = self.host_edit.text()
+        port = self.port_edit.text()
+        db = self.db_edit.text()
+        self.main_app.login_to_database(user,password,host,port,db)
 
 def main():
     app = QApplication([])
