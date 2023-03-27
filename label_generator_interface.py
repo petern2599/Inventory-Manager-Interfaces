@@ -8,6 +8,7 @@ from PyQt5 import uic
 import datetime
 import string
 import random
+import cv2
 
 class LabelGeneratorUI(QMainWindow):
     def __init__(self):
@@ -25,6 +26,7 @@ class LabelGeneratorUI(QMainWindow):
         self.exit_button.clicked.connect(lambda:self.on_exit_clicked())
         self.db_button.clicked.connect(lambda:self.on_db_clicked())
         self.test_button.clicked.connect(lambda:self.on_test_clicked())
+        self.dst_tool_button.clicked.connect(lambda: self.on_dst_tool_clicked())
 
     def set_ui_components(self):
         menu_icon_path = "Resources//menu icon.png"
@@ -58,10 +60,13 @@ class LabelGeneratorUI(QMainWindow):
         quantity = self.get_quantity()
         aisle_text = self.get_aisle_letter_and_number()
         checkout_datetime=self.get_checkout_date()
-        label = Label(item_name,brand_name,aisle_text,product_number,weight,quantity,checkout_datetime)
         missing_value_check = self.check_for_missing_values(item_name,brand_name,product_number,weight,quantity)
         if missing_value_check == True:
+            label = Label(item_name,brand_name,aisle_text,product_number,weight,quantity,checkout_datetime)
             self.show_label_preview(label)
+            label_dst = self.dst_path_edit.text()
+            filename = label_dst +"//label-" + product_number + ".png"
+            cv2.imwrite(filename, label.img)
 
             year = datetime.datetime.now().strftime("%Y")
             month = datetime.datetime.now().strftime("%m")
@@ -71,10 +76,20 @@ class LabelGeneratorUI(QMainWindow):
             second = datetime.datetime.now().strftime("%S")
             checkin = year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second
 
+            year = checkout_datetime.strftime("%Y")
+            month = checkout_datetime.strftime("%m")
+            day = checkout_datetime.strftime("%d")
+            checkout = year + "-" + month + "-" + day
+
             query = "INSERT INTO inventory" + \
-                    "(product_no,product_name,brand,weight,quantity,aisle,checkin)" + \
-                    "VALUES ('{}','{}','{}',{},{},'{}',TO_TIMESTAMP('{}','YYYY-MM-DD HH24:MI:SS'))".format(product_number,item_name,brand_name,weight,quantity,aisle_text,checkin)
+                    "(product_no,product_name,brand,weight,quantity,aisle,checkin,checkout_date)" + \
+                    "VALUES ('{}','{}','{}',{},{},'{}',TO_TIMESTAMP('{}','YYYY-MM-DD HH24:MI:SS'),TO_DATE('{}','YYYY-MM-DD'))" \
+                        .format(product_number,item_name,brand_name,weight,quantity,aisle_text,checkin,checkout)
             self.conn.insert_db(query)
+
+    def on_dst_tool_clicked(self):
+        dir_path = QFileDialog.getExistingDirectory(self,'Select directory')
+        self.dst_path_edit.setText(dir_path)
 
     def on_menu_clicked(self):
         self.exit_button.show()

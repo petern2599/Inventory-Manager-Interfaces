@@ -15,13 +15,7 @@ class DBLoginUI(QMainWindow):
         self.login_button.clicked.connect(lambda:self.on_login_clicked())
     
     def set_ui_components(self):
-        path = "Resources//package-icon.png"
-        qimage = QImage(path)
-        pixmap = QPixmap(qimage)
-        item = QGraphicsPixmapItem(pixmap)
-        scene = QGraphicsScene(self)
-        scene.addItem(item)                                                                                                                                                  
-        self.logo_view.setScene(scene)
+        pass
 
     def on_login_clicked(self):
         user = self.user_edit.text()
