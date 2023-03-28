@@ -1,5 +1,6 @@
 from label_generator import Label
 from db_login_interface import DBLoginUI
+from checkout_interface import CheckoutUI
 from inventory_db_connector import InventoryDBConnector
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -20,12 +21,14 @@ class LabelGeneratorUI(QMainWindow):
         self.show()
         self.set_ui_components()
 
+        self.conn = None
+
         self.generate_product_number_button.clicked.connect(lambda: self.on_generate_product_number_clicked())
         self.generate_button.clicked.connect(lambda: self.on_generate_clicked())
         self.menu_button.clicked.connect(lambda: self.on_menu_clicked())
         self.exit_button.clicked.connect(lambda:self.on_exit_clicked())
         self.db_button.clicked.connect(lambda:self.on_db_clicked())
-        self.test_button.clicked.connect(lambda:self.on_test_clicked())
+        self.checkout_button.clicked.connect(lambda:self.on_checkout_clicked())
         self.dst_tool_button.clicked.connect(lambda: self.on_dst_tool_clicked())
 
     def set_ui_components(self):
@@ -44,6 +47,11 @@ class LabelGeneratorUI(QMainWindow):
         self.db_button.setIcon(db_button_icon)
         self.db_button.setIconSize(QSize(40,40))
 
+        checkout_icon_path = "Resources//export-icon.png"
+        checkout_button_icon = QIcon(checkout_icon_path)
+        self.checkout_button.setIcon(checkout_button_icon)
+        self.checkout_button.setIconSize(QSize(40,40))
+
     def on_generate_product_number_clicked(self):
         # initializing size of string
         N = 16
@@ -60,12 +68,13 @@ class LabelGeneratorUI(QMainWindow):
         quantity = self.get_quantity()
         aisle_text = self.get_aisle_letter_and_number()
         checkout_datetime=self.get_checkout_date()
-        missing_value_check = self.check_for_missing_values(item_name,brand_name,product_number,weight,quantity)
+        label_dst = self.dst_path_edit.text()
+        filename = label_dst +"//label-" + product_number + ".png"
+        missing_value_check = self.check_for_missing_values(item_name,brand_name,product_number,weight,quantity,label_dst)
+        
         if missing_value_check == True:
             label = Label(item_name,brand_name,aisle_text,product_number,weight,quantity,checkout_datetime)
             self.show_label_preview(label)
-            label_dst = self.dst_path_edit.text()
-            filename = label_dst +"//label-" + product_number + ".png"
             cv2.imwrite(filename, label.img)
 
             year = datetime.datetime.now().strftime("%Y")
@@ -80,12 +89,8 @@ class LabelGeneratorUI(QMainWindow):
             month = checkout_datetime.strftime("%m")
             day = checkout_datetime.strftime("%d")
             checkout = year + "-" + month + "-" + day
-
-            query = "INSERT INTO inventory" + \
-                    "(product_no,product_name,brand,weight,quantity,aisle,checkin,checkout_date)" + \
-                    "VALUES ('{}','{}','{}',{},{},'{}',TO_TIMESTAMP('{}','YYYY-MM-DD HH24:MI:SS'),TO_DATE('{}','YYYY-MM-DD'))" \
-                        .format(product_number,item_name,brand_name,weight,quantity,aisle_text,checkin,checkout)
-            self.conn.insert_db(query)
+            
+            self.conn.insert_to_db(product_number,item_name,brand_name,weight,quantity,aisle_text,checkin,checkout)
 
     def on_dst_tool_clicked(self):
         dir_path = QFileDialog.getExistingDirectory(self,'Select directory')
@@ -125,21 +130,32 @@ class LabelGeneratorUI(QMainWindow):
         self.exit_button.hide()
 
     def on_db_clicked(self):
-        self.login_window = DBLoginUI()
+        self.login_window = DBLoginUI(self)
         self.login_window.setWindowTitle('Database Login')
-        self.login_window.main_app = self
+        self.login_window.show()
+
+    def on_checkout_clicked(self):
+        self.login_window = CheckoutUI(self)
+        self.login_window.setWindowTitle('Checkout App')
         self.login_window.show()
 
     def login_to_database(self,user,password,host,port,db):
         self.conn = InventoryDBConnector()
         try:
             self.conn.connect_to_db(db,host,user,password,port)
-            print("Database connection established!")
+            message = QMessageBox()
+            message.setText("Database connection established!")
+            message.setWindowTitle('Connection Message')
+            message.exec_()
             self.login_window.hide()
         except Exception as e:
-            print("Could not connect to database!")
-            print(e)
-
+            self.conn = None
+            message = QMessageBox()
+            message.setText("Could not connect to database!\n" + \
+                            str(e))
+            message.setWindowTitle('Connection Message')
+            message.exec_()
+            
     def get_item_name(self):
         return self.item_name_edit.text()
 
@@ -173,7 +189,7 @@ class LabelGeneratorUI(QMainWindow):
         scene.addItem(item)                                                                                                                                                  
         self.label_preview.setScene(scene) 
     
-    def check_for_missing_values(self,item_name,brand_name,product_number,weight,quantity):
+    def check_for_missing_values(self,item_name,brand_name,product_number,weight,quantity,dst):
         if len(item_name) == 0:
             message = QMessageBox()
             message.setText("Please provide the name of the item.")
@@ -194,13 +210,25 @@ class LabelGeneratorUI(QMainWindow):
             return False
         elif len(quantity) == 0:
             message = QMessageBox()
-            message.setText("Please provide the name of the brand.")
+            message.setText("Please provide the quantity.")
             message.setWindowTitle('Error Message')
             message.exec_()
             return False
         elif len(weight) == 0:
             message = QMessageBox()
             message.setText("Please provide the weight of the package in lbs.")
+            message.setWindowTitle('Error Message')
+            message.exec_()
+            return False
+        elif len(dst) == 0:
+            message = QMessageBox()
+            message.setText("Please provide the folder destination to send generated label.")
+            message.setWindowTitle('Error Message')
+            message.exec_()
+            return False
+        elif self.conn == None:
+            message = QMessageBox()
+            message.setText("Please connect to database.")
             message.setWindowTitle('Error Message')
             message.exec_()
             return False

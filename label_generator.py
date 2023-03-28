@@ -42,7 +42,6 @@ class Label():
         qr.make(fit = True)
         qr_img = qr.make_image(fill_color = 'black',
                             back_color = 'white').convert('RGB')
-        print(qr_img.size)
         
         self.img[15:15+qr_img.size[0],15:15+qr_img.size[1]] = qr_img
 

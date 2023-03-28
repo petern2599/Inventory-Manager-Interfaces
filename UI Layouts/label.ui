@@ -721,16 +721,24 @@ color: rgb(0, 85, 255);</string>
           <height>16777215</height>
          </size>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>11</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
         <property name="styleSheet">
-         <string notr="true">background-color: rgba(255, 255, 255,0);</string>
+         <string notr="true">background-color: rgba(255, 255, 255, 0);
+color: rgb(0, 85, 255);</string>
         </property>
         <property name="text">
-         <string/>
+         <string>Checkout App</string>
         </property>
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QPushButton" name="test_button">
+       <widget class="QPushButton" name="checkout_button">
         <property name="minimumSize">
          <size>
           <width>40</width>
@@ -744,7 +752,7 @@ color: rgb(0, 85, 255);</string>
          </size>
         </property>
         <property name="styleSheet">
-         <string notr="true">background-color: rgb(255, 255, 255);</string>
+         <string notr="true">background-color: rgb(180, 180, 180);</string>
         </property>
         <property name="text">
          <string/>
@@ -908,7 +916,7 @@ color: rgb(0, 85, 255);</string>
   <tabstop>generate_product_number_button</tabstop>
   <tabstop>generate_button</tabstop>
   <tabstop>menu_button</tabstop>
-  <tabstop>test_button</tabstop>
+  <tabstop>checkout_button</tabstop>
   <tabstop>db_button</tabstop>
   <tabstop>exit_button</tabstop>
  </tabstops>

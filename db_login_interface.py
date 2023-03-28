@@ -4,14 +4,14 @@ from PyQt5.QtGui import *
 from PyQt5 import uic
 
 class DBLoginUI(QMainWindow):
-    def __init__(self):
+    def __init__(self,app):
         #initialize UI
         super(DBLoginUI,self).__init__()
         #Load UI file
         uic.loadUi("UI Layouts//db_login.ui",self)
         #Show applicaiton
         self.show()
-        self.main_app = None
+        self.main_app = app
         self.login_button.clicked.connect(lambda:self.on_login_clicked())
     
     def set_ui_components(self):
