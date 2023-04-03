@@ -51,6 +51,13 @@ class InventoryDBConnector():
         self.cursor.execute(query)
         self.connector.commit()
 
+    def get_all_records_from_word(self,word):
+        query = "SELECT * FROM inventory" + \
+                "WHERE product_name LIKE '%{}%'".format(word)
+        print("Performing current query...")
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
+
     def close_connection(self):
         print("Closing connection to database...")
         self.connector.close()

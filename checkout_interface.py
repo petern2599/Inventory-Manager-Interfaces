@@ -90,7 +90,7 @@ class CheckoutUI(QMainWindow):
 
 def main():
     app = QApplication([])
-    window = CheckoutUI("hi")
+    window = CheckoutUI()
     window.setWindowTitle('Checkout Interface')
     app.exec()
     
