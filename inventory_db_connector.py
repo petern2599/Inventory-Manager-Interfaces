@@ -53,10 +53,18 @@ class InventoryDBConnector():
 
     def get_all_records_from_word(self,word):
         query = "SELECT * FROM inventory" + \
-                "WHERE product_name LIKE '%{}%'".format(word)
+                " WHERE product_name LIKE '%{}%'".format(word)
         print("Performing current query...")
         self.cursor.execute(query)
         return self.cursor.fetchall()
+    
+    def get_aisle_from_product_no(self,number):
+        query = "SELECT aisle FROM inventory" + \
+                " WHERE product_no = '{}'".format(number)
+        print("Performing current query...")
+        self.cursor.execute(query)
+        return self.cursor.fetchone()
+
 
     def close_connection(self):
         print("Closing connection to database...")
