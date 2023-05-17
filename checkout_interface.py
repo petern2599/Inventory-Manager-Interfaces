@@ -4,6 +4,8 @@ from PyQt5.QtGui import *
 from PyQt5 import uic
 import cv2
 import datetime
+from pyzbar.pyzbar import decode
+import numpy as np 
 
 class CheckoutUI(QMainWindow):
     def __init__(self,app):
@@ -21,41 +23,54 @@ class CheckoutUI(QMainWindow):
         self.capture = cv2.VideoCapture(0)
         self.camera_status_label.setText("Ready")
         self.camera_status_label.setStyleSheet("background-color: lightgreen")
-        self.detector = cv2.QRCodeDetector()
+        
 
     def __del__(self):
         cv2.destroyAllWindows()
         self.capture.release()
 
-    def draw_detection_box(self,value,points,img):
+    def draw_detection_box(self,img):
         
-        cv2.rectangle(img,(int(points[0][0][0]),int(points[0][0][1])),
-                    (int(points[0][2][0]),int(points[0][2][1])),(255,0,0),3)
-        
-        cv2.rectangle(img,(int(points[0][0][0]),int(points[0][0][1])-20),
-                    (int(points[0][2][0] - (points[0][2][0] - points[0][0][0])*0.1),
-                    int(points[0][0][1])),(255,0,0),-1)
+        cv2.polylines(img,[self.detection_points],True,(255,0,0),4)
 
         font = cv2.FONT_HERSHEY_SIMPLEX
         font_size = 0.6
         font_thickness = 2
-        cv2.putText(img,value,(int(points[0][0][0]),int(points[0][0][1])-5), 
-                        font,
-                        font_size, 
-                        (0,0,255), 
-                        font_thickness, 
-                        lineType = cv2.LINE_AA)
+        
+        x_points = []
+        y_points = []
+        for i in range(4):
+            x_points.append(self.detection_points[i][0])
+            y_points.append(self.detection_points[i][1])
+
+        x_min = min(x_points)
+        x_max = max(x_points)
+        y_min = min(y_points)
+        y_max = max(y_points)
+
+        pos_x = x_max - int((x_max-x_min)*0.90)
+        pos_y = y_max - int((y_max-y_min)/2)
+
+        cv2.putText(img,self.detected_label,(pos_x,pos_y),
+                    font,
+                    font_size,
+                    (0,0,255),
+                    font_thickness,
+                    lineType=cv2.LINE_AA)
+
         return img
 
     def show_camera(self):
         ret,frame = self.capture.read()
-        value, points, straight_qrcodes = self.detector.detectAndDecode(frame)
-        if len(value) != 0:
-            frame = self.draw_detection_box(value,points,frame)
-            self.show_product_no(value)
-            result = self.main_app.conn.check_if_product_no_exists(value)
-            if result != None:
-                expected_checkout_date = self.main_app.conn.get_expected_checkout_date_from_db(value)
+        result = decode(frame)
+        if len(result) != 0:
+            self.detected_label = result[0].data.decode('utf-8')
+            self.detection_points = np.array(result[0].polygon,np.int32)
+            frame = self.draw_detection_box(frame)
+            self.show_product_no()
+            query_result = self.main_app.conn.check_if_product_no_exists(self.detected_label)
+            if query_result != None:
+                expected_checkout_date = self.main_app.conn.get_expected_checkout_date_from_db(self.detected_label)
                 self.expected_checkout_date_label.setText(expected_checkout_date[0])
 
         qimage = QImage(frame, frame.shape[1], frame.shape[0],                                                                                                                                                 
@@ -66,8 +81,8 @@ class CheckoutUI(QMainWindow):
         scene.addItem(item)                                                                                                                                                  
         self.camera_view.setScene(scene)
         
-    def show_product_no(self,product_no):
-        self.product_no_label.setText(product_no)
+    def show_product_no(self):
+        self.product_no_label.setText(self.detected_label)
 
     def checkout_product_no(self):
         product_no = self.product_no_label.text()
